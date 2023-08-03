@@ -71,17 +71,19 @@ button {
     border-radius: 2px;
     outline: none;
     
-    --left-background-1: #F4F4F4;
-    --left-background-2: #F4F4F4;
+    --left-background: #F4F4F4;
     --right-background: #F4F4F4;
-    background: linear-gradient(135deg, var(--left-background-1) 20%, var(--left-background-2) 45%, var(--right-background) 55%);
+    background: linear-gradient(135deg, var(--left-background) 45%, var(--right-background) 55%);
 }
 button.pack-heroicOnly {
-    --left-background-1: #00F8F8;
+    --left-background: #00F8F8;
 }
 button.pack-excluded {
     --right-background: #D0D0D0;
     font-style: italic; 
+}
+button.pack-required {
+    --right-background: #88EE88;
 }
 button:hover {
     filter: brightness(93%);
@@ -90,21 +92,22 @@ button:active {
     filter: brightness(86%);
 }
 
-div#quest-table-container { overflow-y: auto; }
-table#quest-table {
+div#quest-table { overflow-y: auto; }
+#quest-table table {
     width: 100%;
+    height: 100%;
     text-align: center;
     vertical-align: middle;
     border-collapse: collapse;
 }
-table#quest-table thead tr {
+#quest-table table thead tr {
     border-bottom: 4px solid black;
     font-weight: bolder;
 }
-table#quest-table td { padding: 2px 6px; }
-table#quest-table td + td { border-left: 1.5px solid black; }
-table#quest-table tbody tr { background-color: #FFFFFF; }
-table#quest-table tbody tr.raid { background-color: #FFCCCC; }
-table#quest-table tbody tr.solo { background-color: #CCFFFF; }
-table#quest-table tbody tr:nth-child(even) { background-image: linear-gradient(#3332 0 0); }
-table#quest-table tbody tr:hover { filter: brightness(97%) contrast(97%); }
+#quest-table table td { padding: 2px 6px; }
+#quest-table table td + td { border-left: 1.5px solid black; }
+#quest-table table tbody tr { background-color: #FFFFFF; }
+#quest-table table tbody tr.raid { background-color: #FFCCCC; }
+#quest-table table tbody tr.solo { background-color: #CCFFFF; }
+#quest-table table tbody tr:nth-child(even) { background-image: linear-gradient(#3332 0 0); }
+#quest-table table tbody tr:hover { filter: brightness(97%) contrast(97%); }

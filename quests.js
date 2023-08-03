@@ -4,10 +4,9 @@ Array.prototype.all = Array.prototype.every;
 Array.prototype.any = Array.prototype.some;
 Array.prototype.none = function (...args) { return !this.some(...args); };
 function parseCommaInt(str) { return parseInt((str ?? '').replace(/,/g, '')); }
-function createCell({ text, classes = [], style = {}, ...attributes }) {
+function createCell({ classes = [], style = {}, ...attributes }) {
     const cell = document.createElement('td');
 
-    cell.textContent = text;
     if (classes) cell.classList.add(...classes);
     Object.entries(style).forEach(([property, value]) => cell.style[property] = value);
     Object.entries(attributes).forEach(([key, value]) => cell[key] = value);
@@ -17,7 +16,6 @@ function createCell({ text, classes = [], style = {}, ...attributes }) {
 function createRow({ text, classes = [], style = {}, ...attributes }, cells) {
     const row = document.createElement('tr');
     
-    row.textContent = text;
     if (classes) row.classList.add(...classes);
     Object.entries(style).forEach(([property, value]) => row.style[property] = value);
     Object.entries(attributes).forEach(([key, value]) => row[key] = value);
@@ -34,6 +32,7 @@ const questTableContainer = document.querySelector('div#quest-table');
 
 async function main() {
     // Fetch data
+    // const questDataArray = JSON.parse(document.getElementById('quest-data').innerHTML);
     const questDataArray = await fetch('quests.json').then(resp => resp.json());
     const questPacks = ['Free to Play'];
     const quests = { Heroic: {}, Epic: {}, Legendary: {}, Packs: {} };
@@ -48,6 +47,7 @@ async function main() {
     const questPackState = questPacks.reduce((accumulatorObj, questPack) => {
         accumulatorObj[questPack] = JSON.parse(localStorage.getItem(questPack)) ?? {
             excluded: 0,
+            required: 0,
             heroicOnly: 0,
         };
         return accumulatorObj;
@@ -60,15 +60,16 @@ async function main() {
     levelSelector.onclick = levelChange;
 
     function createQuestTable() {
+        const requiredQuestPacks = Object.values(questPackState).any(pack => pack.required);
         const filteredQuests = Object.values(quests.Heroic).filter(quest =>
-            !questPackState[quest.pack].excluded
+            (requiredQuestPacks ? questPackState[quest.pack].required : !questPackState[quest.pack].excluded)
             && (questPackState[quest.pack].heroicOnly || !(quest.name in quests.Epic || quest.name in quests.Legendary))
             && quest.level >= minLevel
             && completedQuests.none(completedQuest => quest.name.match(completedQuest))
             && quest.patron
         );
         filteredQuests.push(...[...Object.values(quests.Epic), ...Object.values(quests.Legendary)].filter(quest =>
-            !questPackState[quest.pack].excluded
+            (requiredQuestPacks ? questPackState[quest.pack].required : !questPackState[quest.pack].excluded)
             && (!questPackState[quest.pack].heroicOnly || !(quest.name in quests.Heroic))
             && quest.level >= minLevel
             && completedQuests.none(completedQuest => quest.name.match(completedQuest))
@@ -83,32 +84,31 @@ async function main() {
         );
 
         const questTable = document.createElement('table');
-        questTable.id = 'quest-table';
 
         const tableHead = questTable.appendChild(document.createElement('thead'));
         tableHead.appendChild(createRow({}, [
-            { text: 'Quest Name', style: { width: '20%' } },
-            { text: 'Quest Level', style: { width: '5%' } },
-            { text: 'Base XP', style: { width: '5%' } },
-            { text: 'Duration', style: { width: '5%' } },
-            { text: 'Pack', style: { width: '20%' } },
-            { text: 'Patron', style: { width: '15%' } },
-            { text: 'Base Favor', style: { width: '5%' } }
+            { textContent: 'Quest Name', style: { width: '20%' } },
+            { textContent: 'Quest Level', style: { width: '5%' } },
+            { textContent: 'Base XP', style: { width: '5%' } },
+            { textContent: 'Duration', style: { width: '5%' } },
+            { textContent: 'Pack', style: { width: '20%' } },
+            { textContent: 'Patron', style: { width: '15%' } },
+            { textContent: 'Base Favor', style: { width: '5%' } }
         ]));
 
         const tableBody = questTable.appendChild(document.createElement('tbody'));
         filteredQuests.forEach(quest => {
             const questType = (quest.soloXP == null && quest.normalXP != null && 'raid') || (quest.soloXP != null && quest.normalXP == null && 'solo');
             tableBody.appendChild(createRow(
-                { classes: questType ? [questType] : [], onclick: markQuest, value: quest.name },
+                { classes: questType ? [questType] : [], onclick: markQuest, value: quest.name, level: quest.level },
                 [
-                    { text: questType ? `${questType.toUpperCase()} - ${quest.name}` : quest.name },
-                    { text: quest.level },
-                    { text: quest.normalXP ?? quest.soloXP ?? '-' },
-                    { text: quest.duration },
-                    { text: quest.pack },
-                    { text: quest.patron ?? '-' },
-                    { text: quest.favor ?? '-' }
+                    { textContent: questType ? `${questType.toUpperCase()} - ${quest.name}` : quest.name },
+                    { textContent: quest.level },
+                    { textContent: quest.normalXP ?? quest.soloXP ?? '-' },
+                    { textContent: quest.duration },
+                    { textContent: quest.pack },
+                    { textContent: quest.patron ?? '-' },
+                    { textContent: quest.favor ?? '-' }
                 ]
             ));
         });
@@ -136,9 +136,17 @@ async function main() {
             completedQuests = completedQuests.filter(quest => quests.Packs[quest] != this.value);
             localStorage.setItem('##Completed Quests', JSON.stringify(completedQuests));
         }
+        else if (event.altKey) {
+            questPackState[this.value].excluded = 0;
+            questPackState[this.value].required ^= 1;
+            this.classList.toggle('pack-excluded', questPackState[this.value].excluded);
+            this.classList.toggle('pack-required', questPackState[this.value].required);
+        }
         else {
             questPackState[this.value].excluded ^= 1;
+            questPackState[this.value].required = 0;
             this.classList.toggle('pack-excluded', questPackState[this.value].excluded);
+            this.classList.toggle('pack-required', questPackState[this.value].required);
         }
         localStorage.setItem(this.value, JSON.stringify(questPackState[this.value]));
 
@@ -156,6 +164,7 @@ async function main() {
         packButton.value = pack;
         packButton.onclick = packButtonClick;
         packButton.classList.toggle('pack-excluded', questPackState[pack].excluded);
+        packButton.classList.toggle('pack-required', questPackState[pack].required);
         packButton.classList.toggle('pack-heroicOnly', questPackState[pack].heroicOnly);
     });
 

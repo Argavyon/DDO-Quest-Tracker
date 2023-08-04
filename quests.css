@@ -59,7 +59,7 @@ div#pack-picker {
 }
 button {
     font-family: Verdana, sans-serif;
-    display: block;
+    display: inline-block;
     width: 100%;
     margin: auto;
     padding: 4px 8px;
@@ -73,10 +73,18 @@ button {
     
     --left-background: #F4F4F4;
     --right-background: #F4F4F4;
-    background: linear-gradient(135deg, var(--left-background) 45%, var(--right-background) 55%);
+    background-image: linear-gradient(135deg, var(--left-background) 45%, var(--right-background) 55%);
 }
-button.pack-heroicOnly {
-    --left-background: #00F8F8;
+@media (pointer: coarse) {
+    button {
+        width: 55%;
+    }
+}
+button:hover {
+    filter: brightness(93%);
+}
+button:active {
+    filter: brightness(86%);
 }
 button.pack-excluded {
     --right-background: #D0D0D0;
@@ -85,17 +93,33 @@ button.pack-excluded {
 button.pack-required {
     --right-background: #88EE88;
 }
-button:hover {
-    filter: brightness(93%);
+button.pack-prefer-heroic {
+    --left-background: #00F8F8;
 }
-button:active {
-    filter: brightness(86%);
+button.mobile {
+    display: inline-block;
+    width: 15%;
+    height: 100%;
+    background-image: none;
+}
+@media (pointer: fine) {
+    button.mobile {
+        display: none;
+    }
+}
+button.mobile.require {
+    background-color: #88EE88; 
+}
+button.mobile.prefer-heroic {
+    background-color: #00F8F8; 
+}
+button.mobile.restore-quests {
+    background-color: #FF7777; 
 }
 
 div#quest-table { overflow-y: auto; }
 #quest-table table {
     width: 100%;
-    height: 100%;
     text-align: center;
     vertical-align: middle;
     border-collapse: collapse;

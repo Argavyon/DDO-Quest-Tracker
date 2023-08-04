@@ -4,25 +4,18 @@ Array.prototype.all = Array.prototype.every;
 Array.prototype.any = Array.prototype.some;
 Array.prototype.none = function (...args) { return !this.some(...args); };
 function parseCommaInt(str) { return parseInt((str ?? '').replace(/,/g, '')); }
-function createCell({ classes = [], style = {}, ...attributes }) {
-    const cell = document.createElement('td');
-
-    if (classes) cell.classList.add(...classes);
-    Object.entries(style).forEach(([property, value]) => cell.style[property] = value);
-    Object.entries(attributes).forEach(([key, value]) => cell[key] = value);
-
-    return cell;
-}
-function createRow({ text, classes = [], style = {}, ...attributes }, cells) {
-    const row = document.createElement('tr');
+function createTypedElement(type, { classes = [], style = {}, ...properties }, children = []) {
+    const element = document.createElement(type);
     
-    if (classes) row.classList.add(...classes);
-    Object.entries(style).forEach(([property, value]) => row.style[property] = value);
-    Object.entries(attributes).forEach(([key, value]) => row[key] = value);
+    if (classes) element.classList.add(...classes);
+    Object.entries(style).forEach(([property, value]) => element.style[property] = value);
+    Object.entries(properties).forEach(([key, value]) => element[key] = value);
 
-    cells.forEach(cell => row.appendChild(createCell(cell)));
+    children.forEach(child => {
+        element.appendChild(createTypedElement(...child))
+    });
 
-    return row;
+    return element;
 }
 
 const levelSelectorValue = document.querySelector('div#level-selector span');
@@ -86,29 +79,30 @@ async function main() {
         const questTable = document.createElement('table');
 
         const tableHead = questTable.appendChild(document.createElement('thead'));
-        tableHead.appendChild(createRow({}, [
-            { textContent: 'Quest Name', style: { width: '20%' } },
-            { textContent: 'Quest Level', style: { width: '5%' } },
-            { textContent: 'Base XP', style: { width: '5%' } },
-            { textContent: 'Duration', style: { width: '5%' } },
-            { textContent: 'Pack', style: { width: '20%' } },
-            { textContent: 'Patron', style: { width: '15%' } },
-            { textContent: 'Base Favor', style: { width: '5%' } }
+        tableHead.appendChild(createTypedElement('tr', {}, [
+            ['td', { textContent: 'Quest Name', style: { width: '20%' } }],
+            ['td', { textContent: 'Quest Level', style: { width: '5%' } }],
+            ['td', { textContent: 'Base XP', style: { width: '5%' } }],
+            ['td', { textContent: 'Duration', style: { width: '5%' } }],
+            ['td', { textContent: 'Pack', style: { width: '20%' } }],
+            ['td', { textContent: 'Patron', style: { width: '15%' } }],
+            ['td', { textContent: 'Base Favor', style: { width: '5%' } }]
         ]));
 
         const tableBody = questTable.appendChild(document.createElement('tbody'));
         filteredQuests.forEach(quest => {
             const questType = (quest.soloXP == null && quest.normalXP != null && 'raid') || (quest.soloXP != null && quest.normalXP == null && 'solo');
-            tableBody.appendChild(createRow(
+            tableBody.appendChild(createTypedElement(
+                'tr',
                 { classes: questType ? [questType] : [], onclick: markQuest, value: quest.name, level: quest.level },
                 [
-                    { textContent: questType ? `${questType.toUpperCase()} - ${quest.name}` : quest.name },
-                    { textContent: quest.level },
-                    { textContent: quest.normalXP ?? quest.soloXP ?? '-' },
-                    { textContent: quest.duration },
-                    { textContent: quest.pack },
-                    { textContent: quest.patron ?? '-' },
-                    { textContent: quest.favor ?? '-' }
+                    ['td', { textContent: questType ? `${questType.toUpperCase()} - ${quest.name}` : quest.name }],
+                    ['td', { textContent: quest.level }],
+                    ['td', { textContent: quest.normalXP ?? quest.soloXP ?? '-' }],
+                    ['td', { textContent: quest.duration }],
+                    ['td', { textContent: quest.pack }],
+                    ['td', { textContent: quest.patron ?? '-' }],
+                    ['td', { textContent: quest.favor ?? '-' }]
                 ]
             ));
         });
@@ -128,27 +122,30 @@ async function main() {
         redrawQuestTable();
     }
     function packButtonClick(event) {
-        if (event.shiftKey) {
-            questPackState[this.value].heroicOnly ^= 1;
-            this.classList.toggle('pack-heroicOnly', questPackState[this.value].heroicOnly);
+        const pack = this.parentNode.value;
+        const mainButton = this.parentNode.firstChild;
+
+        if (event.shiftKey || this.classList.contains('prefer-heroic')) {
+            questPackState[pack].heroicOnly ^= 1;
+            mainButton.classList.toggle('pack-prefer-heroic', questPackState[pack].heroicOnly);
         }
-        else if (event.ctrlKey) {
-            completedQuests = completedQuests.filter(quest => quests.Packs[quest] != this.value);
+        else if (event.ctrlKey || this.classList.contains('restore-quests')) {
+            completedQuests = completedQuests.filter(quest => quests.Packs[quest] != pack);
             localStorage.setItem('##Completed Quests', JSON.stringify(completedQuests));
         }
-        else if (event.altKey) {
-            questPackState[this.value].excluded = 0;
-            questPackState[this.value].required ^= 1;
-            this.classList.toggle('pack-excluded', questPackState[this.value].excluded);
-            this.classList.toggle('pack-required', questPackState[this.value].required);
+        else if (event.altKey || this.classList.contains('require')) {
+            questPackState[pack].excluded = 0;
+            questPackState[pack].required ^= 1;
+            mainButton.classList.toggle('pack-excluded', questPackState[pack].excluded);
+            mainButton.classList.toggle('pack-required', questPackState[pack].required);
         }
         else {
-            questPackState[this.value].excluded ^= 1;
-            questPackState[this.value].required = 0;
-            this.classList.toggle('pack-excluded', questPackState[this.value].excluded);
-            this.classList.toggle('pack-required', questPackState[this.value].required);
+            questPackState[pack].excluded ^= 1;
+            questPackState[pack].required = 0;
+            mainButton.classList.toggle('pack-excluded', questPackState[pack].excluded);
+            mainButton.classList.toggle('pack-required', questPackState[pack].required);
         }
-        localStorage.setItem(this.value, JSON.stringify(questPackState[this.value]));
+        localStorage.setItem(pack, JSON.stringify(questPackState[pack]));
 
         redrawQuestTable();
     }
@@ -159,16 +156,35 @@ async function main() {
     }
 
     questPacks.forEach(pack => {
-        const packButton = packPicker.appendChild(document.createElement('button'));
-        packButton.textContent = pack;
-        packButton.value = pack;
-        packButton.onclick = packButtonClick;
-        packButton.classList.toggle('pack-excluded', questPackState[pack].excluded);
-        packButton.classList.toggle('pack-required', questPackState[pack].required);
-        packButton.classList.toggle('pack-heroicOnly', questPackState[pack].heroicOnly);
+        packPicker.appendChild(createTypedElement('div', { value: pack, style: { textAlign: 'center' } }, [
+            ['button', {
+                textContent: pack,
+                classes: [
+                    ...(questPackState[pack].excluded ? ['pack-excluded'] : []),
+                    ...(questPackState[pack].required ? ['pack-required'] : []),
+                    ...(questPackState[pack].heroicOnly ? ['pack-prefer-heroic'] : []),
+                ],
+                onclick: packButtonClick
+            }],
+            ['button', {
+                textContent: 'Req',
+                classes: ['mobile', 'require'],
+                onclick: packButtonClick
+            }],
+            ['button', {
+                textContent: 'Hero',
+                classes: ['mobile', 'prefer-heroic'],
+                onclick: packButtonClick
+            }],
+            ['button', {
+                textContent: 'Reset',
+                classes: ['mobile', 'restore-quests'],
+                onclick: packButtonClick
+            }]
+        ]));
     });
 
-    questTableContainer.appendChild(createQuestTable(1));
+    questTableContainer.appendChild(createQuestTable());
 }
 
 main();

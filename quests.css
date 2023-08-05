@@ -61,8 +61,10 @@ button {
     font-family: Verdana, sans-serif;
     display: inline-block;
     width: 100%;
-    margin: auto;
+    height: 100%;
     padding: 4px 8px;
+    text-align: center;
+    vertical-align:top;
 
     color: #000000;
     border-color: #787878;
@@ -97,9 +99,7 @@ button.pack-prefer-heroic {
     --left-background: #00F8F8;
 }
 button.mobile {
-    display: inline-block;
     width: 15%;
-    height: 100%;
     background-image: none;
 }
 @media (pointer: fine) {

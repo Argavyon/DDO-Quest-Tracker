@@ -1,0 +1,9 @@
+name: Fetch Quests
+description: Check the DDO Wiki for quest data.
+inputs:
+  proxy:
+    required: true
+    default: ''
+runs:
+  using: 'node16'
+  main: 'fetchFromWiki.js'

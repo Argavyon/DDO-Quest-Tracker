@@ -25,8 +25,7 @@ const questTableContainer = document.querySelector('div#quest-table');
 
 async function main() {
     // Fetch data
-    // const questDataArray = JSON.parse(document.getElementById('quest-data').innerHTML);
-    const questDataArray = await fetch('quests.json').then(resp => resp.json());
+    const questDataArray = await fetch(window.location.origin === 'file://' ? 'https://argavyon.github.io/DDO-Quest-Tracker/quests.json' : 'quests.json').then(resp => resp.json());
     const questPacks = ['Free to Play'];
     const quests = { Heroic: {}, Epic: {}, Legendary: {}, Packs: {} };
     questDataArray.forEach(quest => {
